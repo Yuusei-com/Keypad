@@ -65,23 +65,29 @@
 <div class="input-display" id="inputDisplay"></div>
 
 <div class="keypad">
-    <button class="button" onclick="playDTMFTone('1')">1</button>
-    <button class="button" onclick="playDTMFTone('2')">2</button>
-    <button class="button" onclick="playDTMFTone('3')">3</button>
-    <button class="button" onclick="playDTMFTone('4')">4</button>
-    <button class="button" onclick="playDTMFTone('5')">5</button>
-    <button class="button" onclick="playDTMFTone('6')">6</button>
-    <button class="button" onclick="playDTMFTone('7')">7</button>
-    <button class="button" onclick="playDTMFTone('8')">8</button>
-    <button class="button" onclick="playDTMFTone('9')">9</button>
+    <button class="button" onclick="handleButtonClick('1')">1</button>
+    <button class="button" onclick="handleButtonClick('2')">2</button>
+    <button class="button" onclick="handleButtonClick('3')">3</button>
+    <button class="button" onclick="handleButtonClick('4')">4</button>
+    <button class="button" onclick="handleButtonClick('5')">5</button>
+    <button class="button" onclick="handleButtonClick('6')">6</button>
+    <button class="button" onclick="handleButtonClick('7')">7</button>
+    <button class="button" onclick="handleButtonClick('8')">8</button>
+    <button class="button" onclick="handleButtonClick('9')">9</button>
     <button class="button" id="zeroButton">0</button>
-    <button class="button" onclick="playDTMFTone('*')">*</button>
-    <button class="button" onclick="playDTMFTone('#')">#</button>
+    <button class="button" onclick="handleButtonClick('*')">*</button>
+    <button class="button" onclick="handleButtonClick('#')">#</button>
 </div>
 
 <script>
     let zeroButtonTimeout;
     let isPlusPressed = false; // +ボタンが押されているかどうかのフラグ
+
+    // ボタンがクリックされたときの処理
+    function handleButtonClick(key) {
+        playDTMFTone(key); // 音を再生
+        document.getElementById('inputDisplay').textContent += key; // 入力を表示
+    }
 
     document.getElementById('zeroButton').addEventListener('mousedown', () => {
         zeroButtonTimeout = setTimeout(() => {
@@ -94,8 +100,7 @@
     document.getElementById('zeroButton').addEventListener('mouseup', () => {
         clearTimeout(zeroButtonTimeout);
         if (!isPlusPressed) {
-            playDTMFTone('0'); // +が押されていないときのみ0を入力
-            document.getElementById('inputDisplay').textContent += '0'; // 0を表示
+            handleButtonClick('0'); // +が押されていないときのみ0を入力
         }
         isPlusPressed = false; // フラグをリセット
     });
