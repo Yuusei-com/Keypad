@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>キーパットサウンドジェネレータ</title>
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            display: flex;
+            flex-direction: column;
+            justify-content: center; /* 中央に配置 */
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            color: white;
+        }
+        h1 {
+            margin-top: 20px; /* 上のスペースを減少 */
+            margin-bottom: 20px;
+            font-size: 36px;
+        }
+        .input-display {
+            background-color: #fff;
+            color: #333;
+            padding: 10px 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            font-size: 36px;
+            min-width: 150px;
+            text-align: center;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        .button {
+            background-color: #333;
+            color: white;
+            padding: 20px;
+            margin: 10px;
+            border: none;
+            border-radius: 10px;
+            font-size: 30px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        .button:hover {
+            background-color: #555;
+            transform: scale(1.05);
+        }
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            padding: 0 15px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>キーパットサウンドジェネレータ</h1>
+<h2>0を長押しすると + が入力されます</h2>
+
+<div class="input-display" id="inputDisplay"></div>
+
+<div class="keypad">
+    <button class="button" onclick="playDTMFTone('1')">1</button>
+    <button class="button" onclick="playDTMFTone('2')">2</button>
+    <button class="button" onclick="playDTMFTone('3')">3</button>
+    <button class="button" onclick="playDTMFTone('4')">4</button>
+    <button class="button" onclick="playDTMFTone('5')">5</button>
+    <button class="button" onclick="playDTMFTone('6')">6</button>
+    <button class="button" onclick="playDTMFTone('7')">7</button>
+    <button class="button" onclick="playDTMFTone('8')">8</button>
+    <button class="button" onclick="playDTMFTone('9')">9</button>
+    <button class="button" id="zeroButton">0</button>
+    <button class="button" onclick="playDTMFTone('*')">*</button>
+    <button class="button" onclick="playDTMFTone('#')">#</button>
+</div>
+
+<script>
+    let zeroButtonTimeout;
+    let isPlusPressed = false; // +ボタンが押されているかどうかのフラグ
+
+    document.getElementById('zeroButton').addEventListener('mousedown', () => {
+        zeroButtonTimeout = setTimeout(() => {
+            playDTMFTone('+');
+            document.getElementById('inputDisplay').textContent += '+'; // +を表示
+            isPlusPressed = true; // +が押されたことを記録
+        }, 300); // 0ボタンの長押しの時間を300msに設定
+    });
+
+    document.getElementById('zeroButton').addEventListener('mouseup', () => {
+        clearTimeout(zeroButtonTimeout);
+        if (!isPlusPressed) {
+            playDTMFTone('0'); // +が押されていないときのみ0を入力
+            document.getElementById('inputDisplay').textContent += '0'; // 0を表示
+        }
+        isPlusPressed = false; // フラグをリセット
+    });
+
+    document.getElementById('zeroButton').addEventListener('mouseleave', () => {
+        clearTimeout(zeroButtonTimeout);
+        isPlusPressed = false; // フラグをリセット
+    });
+
+    // キーボードの入力を監視
+    document.addEventListener('keydown', (event) => {
+        const key = event.key;
+        if (['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '#', '+'].includes(key)) {
+            playDTMFTone(key);
+            document.getElementById('inputDisplay').textContent += key; // 入力を表示
+        }
+    });
+
+    function playDTMFTone(key) {
+        const context = new (window.AudioContext || window.webkitAudioContext)();
+        const gainNode = context.createGain();
+
+        // キーに対応する周波数の設定
+        const dtmfFrequencies = {
+            '1': [697, 1209],
+            '2': [697, 1336],
+            '3': [697, 1477],
+            '4': [770, 1209],
+            '5': [770, 1336],
+            '6': [770, 1477],
+            '7': [852, 1209],
+            '8': [852, 1336],
+            '9': [852, 1477],
+            '0': [941, 1336],
+            '*': [941, 1209],
+            '#': [941, 1477],
+            '+': [941, 1209] // +の周波数を設定
+        };
+
+        const [lowFreq, highFreq] = dtmfFrequencies[key];
+
+        // 低周波数のトーンを生成
+        const lowOscillator = context.createOscillator();
+        lowOscillator.frequency.value = lowFreq;
+
+        // 高周波数のトーンを生成
+        const highOscillator = context.createOscillator();
+        highOscillator.frequency.value = highFreq;
+
+        // 音量の制御（音が強すぎないように調整）
+        gainNode.gain.value = 0.1;
+
+        // オシレーターを音量調整ノードに接続し、最終的に出力
+        lowOscillator.connect(gainNode);
+        highOscillator.connect(gainNode);
+        gainNode.connect(context.destination);
+
+        // 再生開始
+        lowOscillator.start();
+        highOscillator.start();
+
+        // 0.1秒後に音を停止
+        setTimeout(() => {
+            lowOscillator.stop();
+            highOscillator.stop();
+        }, 100);
+    }
+</script>
+
+</body>
+</html>
