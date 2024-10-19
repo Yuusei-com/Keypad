@@ -80,17 +80,20 @@
 </div>
 
 <script>
+    const context = new (window.AudioContext || window.webkitAudioContext)();
     let zeroButtonTimeout;
     let isPlusPressed = false; // +ボタンが押されているかどうかのフラグ
 
     // ボタンがクリックされたときの処理
     function handleButtonClick(key) {
+        ensureContextIsRunning();
         playDTMFTone(key); // 音を再生
         document.getElementById('inputDisplay').textContent += key; // 入力を表示
     }
 
     document.getElementById('zeroButton').addEventListener('mousedown', () => {
         zeroButtonTimeout = setTimeout(() => {
+            ensureContextIsRunning();
             playDTMFTone('+');
             document.getElementById('inputDisplay').textContent += '+'; // +を表示
             isPlusPressed = true; // +が押されたことを記録
@@ -114,13 +117,11 @@
     document.addEventListener('keydown', (event) => {
         const key = event.key;
         if (['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '#', '+'].includes(key)) {
-            playDTMFTone(key);
-            document.getElementById('inputDisplay').textContent += key; // 入力を表示
+            handleButtonClick(key);
         }
     });
 
     function playDTMFTone(key) {
-        const context = new (window.AudioContext || window.webkitAudioContext)();
         const gainNode = context.createGain();
 
         // キーに対応する周波数の設定
@@ -166,8 +167,18 @@
         setTimeout(() => {
             lowOscillator.stop();
             highOscillator.stop();
+            lowOscillator.disconnect();
+            highOscillator.disconnect();
+            gainNode.disconnect();
         }, 100);
     }
+
+    function ensureContextIsRunning() {
+        if (context.state === 'suspended') {
+            context.resume();
+        }
+    }
+
 </script>
 
 </body>
